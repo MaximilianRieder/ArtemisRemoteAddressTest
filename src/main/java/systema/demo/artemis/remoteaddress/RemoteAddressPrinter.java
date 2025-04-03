@@ -14,15 +14,19 @@ import org.apache.activemq.artemis.spi.core.remoting.Connection;
  */
 public class RemoteAddressPrinter
 {
+	private static final String BROKER_URL = "(tcp://hostA:6666,tcp://hostB:6666)?failoverAttempts=-1";
 	private static final int CHECK_INTERVAL = 5;
 
 	public static void main(String[] args)
 	{
-		String brokerUrl =
-				"failover:(tcp://localhost:61616,tcp://backup-host:61616)?ha=true&initialReconnectDelay=2000&maxReconnectAttempts=-1";
+		String brokerUrl;
 		if ( args.length > 0 )
 		{
 			brokerUrl = args[0];
+		}
+		else
+		{
+			brokerUrl = BROKER_URL;
 		}
 		try ( ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
 		      ActiveMQConnection connection = (ActiveMQConnection) connectionFactory.createConnection() )
@@ -32,10 +36,9 @@ public class RemoteAddressPrinter
 			{
 				scheduler.scheduleAtFixedRate(() -> printRemoteConnection(connection), 0, CHECK_INTERVAL,
 				                              TimeUnit.SECONDS);
+				// Keep alive
+				Thread.currentThread().join();
 			}
-
-			// Keep alive
-			Thread.currentThread().join();
 		}
 		catch ( Exception e )
 		{
